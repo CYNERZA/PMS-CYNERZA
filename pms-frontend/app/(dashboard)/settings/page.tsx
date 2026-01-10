@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HotelProfileForm } from '@/components/settings/hotel-profile-form';
+import { IntegrationsTab } from '@/components/settings/integrations-tab';
 
 export default function SettingsPage() {
     return (
@@ -15,6 +16,7 @@ export default function SettingsPage() {
             <Tabs defaultValue="profile" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="profile">Hotel Profile</TabsTrigger>
+                    <TabsTrigger value="integrations">Integrations</TabsTrigger>
                     <TabsTrigger value="account">Account</TabsTrigger>
                     <TabsTrigger value="preferences">Preferences</TabsTrigger>
                 </TabsList>
@@ -31,6 +33,10 @@ export default function SettingsPage() {
                             <HotelProfileForm />
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="integrations" className="space-y-4">
+                    <IntegrationsTab />
                 </TabsContent>
 
                 <TabsContent value="account" className="space-y-4">
