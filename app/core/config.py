@@ -17,8 +17,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    PUBLIC_SIGNUP_ENABLED: bool = True
     
     # Admin User
+    BOOTSTRAP_ADMIN_ON_STARTUP: bool = False
     ADMIN_EMAIL: str = "admin@hotel.com"
     ADMIN_PASSWORD: str = "admin123"
     

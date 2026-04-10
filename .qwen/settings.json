@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof *)",
+      "Bash(fuser *)",
+      "Bash(sleep *)"
+    ]
+  },
+  "$version": 3
+}

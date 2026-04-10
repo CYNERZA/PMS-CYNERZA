@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { authApi, type AuthSetupStatus } from '@/lib/api/auth';
 
 const loginSchema = z.object({
     email: z.string().email('Invalid email address'),
@@ -27,15 +28,33 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const { login, user, isLoading: isAuthLoading } = useAuth();
+    const { login, signup, user, isLoading: isAuthLoading } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [setupStatus, setSetupStatus] = useState<AuthSetupStatus | null>(null);
+    const [isSignupMode, setIsSignupMode] = useState(false);
+    const isSignupEnabled = setupStatus?.signup_enabled ?? true;
 
     useEffect(() => {
         if (!isAuthLoading && user) {
             router.push('/');
         }
     }, [user, isAuthLoading, router]);
+
+    useEffect(() => {
+        const loadSetupStatus = async () => {
+            try {
+                const status = await authApi.getSetupStatus();
+                setSetupStatus(status);
+                if (status.signup_enabled && status.user_count === 0) {
+                    setIsSignupMode(true);
+                }
+            } catch (error) {
+                console.error('Failed to load auth setup status:', error);
+            }
+        };
+        loadSetupStatus();
+    }, []);
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -48,12 +67,17 @@ export default function LoginPage() {
     async function onSubmit(values: LoginFormValues) {
         setIsLoading(true);
         try {
-            await login(values.email, values.password);
-            toast.success('Login successful');
+            if (isSignupMode && isSignupEnabled) {
+                await signup(values.email, values.password);
+                toast.success('Signup successful');
+            } else {
+                await login(values.email, values.password);
+                toast.success('Login successful');
+            }
             router.push('/');
         } catch (error: any) {
             console.error('Login error:', error);
-            const errorMessage = error.response?.data?.detail || 'Invalid email or password';
+            const errorMessage = error.response?.data?.detail || 'Authentication failed';
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -66,7 +90,9 @@ export default function LoginPage() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">PMS-CYNERZA</CardTitle>
                     <CardDescription className="text-center">
-                        Enter your email and password to access your account
+                        {isSignupMode
+                            ? 'Create your account to start using PMS-CYNERZA'
+                            : 'Enter your email and password to access your account'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -99,8 +125,19 @@ export default function LoginPage() {
                                 )}
                             />
                             <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'Signing in...' : 'Sign in'}
+                                {isLoading ? (isSignupMode ? 'Creating account...' : 'Signing in...') : (isSignupMode ? 'Create account' : 'Sign in')}
                             </Button>
+                            {isSignupEnabled && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => setIsSignupMode((prev) => !prev)}
+                                    disabled={isLoading}
+                                >
+                                    {isSignupMode ? 'Already have an account? Sign in' : 'New user? Create account'}
+                                </Button>
+                            )}
                         </form>
                     </Form>
                 </CardContent>

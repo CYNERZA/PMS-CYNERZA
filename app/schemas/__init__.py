@@ -2,7 +2,7 @@
 
 from app.schemas.user import (
     UserBase, UserCreate, UserRead, 
-    Token, TokenData, LoginRequest
+    Token, TokenData, LoginRequest, SetupStatus
 )
 from app.schemas.room_type import (
     RoomTypeBase, RoomTypeCreate, RoomTypeUpdate, RoomTypeRead
@@ -22,7 +22,7 @@ from app.schemas.booking import (
 
 __all__ = [
     # User
-    "UserBase", "UserCreate", "UserRead", "Token", "TokenData", "LoginRequest",
+    "UserBase", "UserCreate", "UserRead", "Token", "TokenData", "LoginRequest", "SetupStatus",
     # Room Type
     "RoomTypeBase", "RoomTypeCreate", "RoomTypeUpdate", "RoomTypeRead",
     # Inventory

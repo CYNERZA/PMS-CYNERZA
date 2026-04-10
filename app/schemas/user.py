@@ -42,3 +42,9 @@ class LoginRequest(BaseModel):
     """Login request with email and password."""
     email: EmailStr
     password: str
+
+
+class SetupStatus(BaseModel):
+    """Public auth setup status for first-time onboarding."""
+    signup_enabled: bool
+    user_count: int

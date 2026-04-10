@@ -43,24 +43,27 @@ async def lifespan(app: FastAPI):
     await create_tables()
     print("✅ Database tables created")
     
-    # Seed admin user if not exists
-    async with async_session_maker() as session:
-        result = await session.execute(
-            select(User).where(User.email == settings.ADMIN_EMAIL)
-        )
-        admin = result.scalar_one_or_none()
-        
-        if not admin:
-            admin = User(
-                email=settings.ADMIN_EMAIL,
-                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
-                is_active=True
+    # Optional admin bootstrap for environments that need fixed credentials.
+    if settings.BOOTSTRAP_ADMIN_ON_STARTUP:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(User).where(User.email == settings.ADMIN_EMAIL)
             )
-            session.add(admin)
-            await session.commit()
-            print(f"✅ Admin user created: {settings.ADMIN_EMAIL}")
-        else:
-            print(f"ℹ️  Admin user already exists: {settings.ADMIN_EMAIL}")
+            admin = result.scalar_one_or_none()
+            
+            if not admin:
+                admin = User(
+                    email=settings.ADMIN_EMAIL,
+                    hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+                    is_active=True
+                )
+                session.add(admin)
+                await session.commit()
+                print(f"✅ Admin user created: {settings.ADMIN_EMAIL}")
+            else:
+                print(f"ℹ️  Admin user already exists: {settings.ADMIN_EMAIL}")
+    else:
+        print("ℹ️  Admin bootstrap disabled; first user must sign up")
     
     print("🚀 Hotel PMS API is ready!")
     print(f"📚 API docs available at: http://127.0.0.1:8000/docs")
