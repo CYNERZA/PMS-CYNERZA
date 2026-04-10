@@ -3,9 +3,11 @@
 import { CustomerForm } from '@/components/customers/customer-form';
 import { useCustomer } from '@/lib/hooks/use-customers';
 import { Loader2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
-export default function EditCustomerPage({ params }: { params: { id: string } }) {
-    const customerId = parseInt(params.id);
+export default function EditCustomerPage() {
+    const params = useParams<{ id: string }>();
+    const customerId = Number(params.id);
     const { data: customer, isLoading } = useCustomer(customerId);
 
     if (isLoading) {

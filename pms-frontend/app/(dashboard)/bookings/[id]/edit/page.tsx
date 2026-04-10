@@ -3,9 +3,11 @@
 import { BookingForm } from '@/components/bookings/booking-form';
 import { useBooking } from '@/lib/hooks/use-bookings';
 import { Loader2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
-export default function EditBookingPage({ params }: { params: { id: string } }) {
-    const bookingId = parseInt(params.id);
+export default function EditBookingPage() {
+    const params = useParams<{ id: string }>();
+    const bookingId = Number(params.id);
     const { data: booking, isLoading } = useBooking(bookingId);
 
     if (isLoading) {

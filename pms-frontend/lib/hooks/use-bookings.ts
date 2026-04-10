@@ -36,10 +36,11 @@ export function useBookings(page = 1, limit = 10, status?: string, dateFrom?: st
 }
 
 export function useBooking(id: number) {
+    const isValidId = Number.isInteger(id) && id > 0;
     return useQuery({
         queryKey: ['booking', id],
         queryFn: () => bookingApi.getById(id),
-        enabled: !!id,
+        enabled: isValidId,
     });
 }
 

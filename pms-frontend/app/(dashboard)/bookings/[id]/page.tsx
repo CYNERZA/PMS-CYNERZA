@@ -4,15 +4,16 @@
 import { useBooking } from '@/lib/hooks/use-bookings';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Printer } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge';
 import { CustomerDetailsCard } from '@/components/customers/customer-details-card';
 
-export default function BookingDetailsPage({ params }: { params: { id: string } }) {
+export default function BookingDetailsPage() {
     const router = useRouter();
-    const bookingId = parseInt(params.id);
+    const params = useParams<{ id: string }>();
+    const bookingId = Number(params.id);
     const { data: booking, isLoading } = useBooking(bookingId);
 
     if (isLoading) {

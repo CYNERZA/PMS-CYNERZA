@@ -41,18 +41,20 @@ export function useCustomers(page = 1, limit = 10, search?: string) {
 }
 
 export function useCustomer(id: number) {
+    const isValidId = Number.isInteger(id) && id > 0;
     return useQuery({
         queryKey: ['customer', id],
         queryFn: () => customerApi.getById(id),
-        enabled: !!id,
+        enabled: isValidId,
     });
 }
 
 export function useCustomerHistory(id: number) {
+    const isValidId = Number.isInteger(id) && id > 0;
     return useQuery({
         queryKey: ['customer-history', id],
         queryFn: () => customerApi.getHistory(id),
-        enabled: !!id,
+        enabled: isValidId,
     });
 }
 

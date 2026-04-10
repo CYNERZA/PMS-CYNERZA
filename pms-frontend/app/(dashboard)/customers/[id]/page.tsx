@@ -4,16 +4,17 @@ import { useCustomer, useCustomerHistory } from '@/lib/hooks/use-customers';
 import { CustomerDetailsCard } from '@/components/customers/customer-details-card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Booking } from '@/types/booking';
 import { Badge } from '@/components/ui/badge'; // Will need to create/add Badge if not exists
 
-export default function CustomerDetailsPage({ params }: { params: { id: string } }) {
+export default function CustomerDetailsPage() {
     const router = useRouter();
-    const customerId = parseInt(params.id);
+    const params = useParams<{ id: string }>();
+    const customerId = Number(params.id);
 
     const { data: customer, isLoading: isLoadingCustomer } = useCustomer(customerId);
     const { data: history, isLoading: isLoadingHistory } = useCustomerHistory(customerId);
