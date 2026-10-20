@@ -1,13 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
-import { ArrowRight, Building2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
+import {
+    ArrowRight,
+    BarChart3,
+    Building2,
+    CalendarCheck,
+    Check,
+    Eye,
+    EyeOff,
+    Loader2,
+    LockKeyhole,
+    Mail,
+    ShieldCheck,
+    Sparkles,
+    Users,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -27,6 +41,43 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+const highlights = [
+    {
+        icon: CalendarCheck,
+        title: 'Bookings that stay in sync',
+        description: 'Live availability, arrivals, and departures in one view.',
+    },
+    {
+        icon: BarChart3,
+        title: 'Clarity on every metric',
+        description: 'Revenue and occupancy insights without the spreadsheets.',
+    },
+    {
+        icon: Users,
+        title: 'Built for your whole team',
+        description: 'Front desk, housekeeping, and management on the same page.',
+    },
+];
+
+function getPasswordStrength(password: string) {
+    if (!password) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+    const map = [
+        { label: 'Too short', color: 'bg-rose-400' },
+        { label: 'Weak', color: 'bg-rose-400' },
+        { label: 'Fair', color: 'bg-amber-400' },
+        { label: 'Good', color: 'bg-emerald-400' },
+        { label: 'Strong', color: 'bg-emerald-500' },
+    ];
+
+    return { score, ...map[score] };
+}
 
 export default function LoginPage() {
     const { login, signup, user, isLoading: isAuthLoading } = useAuth();
@@ -66,15 +117,18 @@ export default function LoginPage() {
         },
     });
 
+    const passwordValue = form.watch('password');
+    const passwordStrength = useMemo(() => getPasswordStrength(passwordValue), [passwordValue]);
+
     async function onSubmit(values: LoginFormValues) {
         setIsLoading(true);
         try {
             if (isSignupMode && isSignupEnabled) {
                 await signup(values.email, values.password);
-                toast.success('Signup successful');
+                toast.success('Account created successfully');
             } else {
                 await login(values.email, values.password);
-                toast.success('Login successful');
+                toast.success('Welcome back');
             }
             router.push('/');
         } catch (error: unknown) {
@@ -88,142 +142,311 @@ export default function LoginPage() {
         }
     }
 
-    return (
-                                <main className="min-h-screen bg-[#f6f7f2] lg:grid lg:grid-cols-[1.04fr_0.96fr]">
-                                    <section
-                                        className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#183c32] bg-cover bg-center px-6 py-7 text-white sm:min-h-[340px] sm:px-10 sm:py-9 lg:min-h-screen lg:px-14 lg:py-12"
-                                        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=85')" }}
-                                        aria-label="Hotel resort"
-                                    >
-                                        <div className="absolute inset-0 -z-10 bg-[#10231d]/35" />
-                                        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#10231d]/90 via-[#10231d]/10 to-[#10231d]/30" />
-                                        <a href="/login" className="flex w-fit items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-                                            <span className="flex size-11 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm">
-                                                <Building2 aria-hidden="true" className="size-6" />
-                                            </span>
-                                            <span>
-                                                <span className="block text-sm font-semibold tracking-[0.08em]">CYNERZA</span>
-                                                <span className="mt-0.5 block text-[10px] font-medium tracking-[0.18em] text-white/75">HOTEL OPERATIONS</span>
-                                            </span>
-                                        </a>
-                                        <div className="max-w-xl pb-1 sm:pb-4 lg:pb-10">
-                                            <p className="mb-4 text-[11px] font-semibold tracking-[0.2em] text-[#d6c79f]">HOSPITALITY, IN SYNC</p>
-                                            <h1 className="max-w-lg text-3xl font-semibold leading-[1.12] sm:text-4xl lg:text-[52px]">Make every stay feel considered.</h1>
-                                            <p className="mt-4 max-w-md text-sm leading-6 text-white/80 sm:text-base">
-                                                A thoughtful space for the people and details behind a great guest experience.
-                                            </p>
-                                            <div className="mt-7 hidden items-center gap-3 border-t border-white/25 pt-5 text-sm text-white/85 sm:flex lg:mt-10">
-                                                <ShieldCheck aria-hidden="true" className="size-5 text-[#d6c79f]" />
-                                                <span>One secure place for your property team.</span>
-                                            </div>
-                                        </div>
-                                    </section>
+    const switchMode = (signupMode: boolean) => {
+        if (isLoading) return;
+        setIsSignupMode(signupMode);
+        form.clearErrors();
+    };
 
-                                    <section className="flex min-h-[calc(100svh-270px)] items-center justify-center px-5 py-10 sm:min-h-[calc(100svh-340px)] sm:px-10 sm:py-14 lg:min-h-screen lg:px-12">
-                                        <div className="w-full max-w-[430px]">
-                                            <div className="mb-8 lg:mb-10">
-                                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#587166]">
-                                                    {isSignupMode ? 'A better way to host' : 'Your property, in good hands'}
-                                                </p>
-                                                <h2 className="mt-3 text-[30px] font-semibold leading-tight text-[#1b2e27] sm:text-4xl">
-                                                    {isSignupMode ? 'Create your account' : 'Welcome back'}
-                                                </h2>
-                                                <p className="mt-3 text-sm leading-6 text-[#69766f] sm:text-base">
-                                                    {isSignupMode ? 'Set up your secure access to CYNERZA.' : 'Sign in to continue to your hotel workspace.'}
-                                                </p>
+    return (
+        <main className="min-h-svh bg-[#f4f6f1] lg:grid lg:grid-cols-[1.02fr_0.98fr]">
+            <section className="relative isolate hidden overflow-hidden bg-[#0b2a22] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16 xl:py-14">
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(120%_100%_at_0%_0%,#1d5a48_0%,#0b2a22_55%,#071f19_100%)]" />
+                <div
+                    className="absolute inset-0 -z-10 opacity-[0.16]"
+                    style={{
+                        backgroundImage:
+                            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0)',
+                        backgroundSize: '26px 26px',
+                    }}
+                />
+                <div className="absolute -right-32 -top-24 -z-10 size-[420px] rounded-full bg-emerald-400/15 blur-3xl" />
+                <div className="absolute -bottom-40 -left-24 -z-10 size-[380px] rounded-full bg-[#c9b98a]/15 blur-3xl" />
+
+                <a
+                    href="/login"
+                    className="flex w-fit items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                >
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur-sm">
+                        <Building2 aria-hidden="true" className="size-5" />
+                    </span>
+                    <span>
+                        <span className="block text-sm font-semibold tracking-[0.14em]">CYNERZA</span>
+                        <span className="mt-0.5 block text-[10px] font-medium tracking-[0.2em] text-white/60">
+                            HOTEL OPERATIONS
+                        </span>
+                    </span>
+                </a>
+
+                <div className="max-w-xl py-10">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-[#e2d5ad] backdrop-blur-sm">
+                        <Sparkles aria-hidden="true" className="size-3.5" />
+                        HOSPITALITY, IN SYNC
+                    </span>
+                    <h1 className="mt-6 text-[42px] font-semibold leading-[1.08] tracking-tight xl:text-[52px]">
+                        Every stay,
+                        <br />
+                        <span className="text-[#dccf9f]">thoughtfully managed.</span>
+                    </h1>
+                    <p className="mt-5 max-w-md text-[15px] leading-7 text-white/70">
+                        The calm, connected workspace for the people and details behind a
+                        remarkable guest experience.
+                    </p>
+
+                    <ul className="mt-9 space-y-3">
+                        {highlights.map((item) => (
+                            <li
+                                key={item.title}
+                                className="flex items-start gap-3.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm"
+                            >
+                                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#e2d5ad] ring-1 ring-white/10">
+                                    <item.icon aria-hidden="true" className="size-4" />
+                                </span>
+                                <span>
+                                    <span className="block text-sm font-medium text-white">
+                                        {item.title}
+                                    </span>
+                                    <span className="mt-0.5 block text-xs leading-5 text-white/60">
+                                        {item.description}
+                                    </span>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div className="flex items-center justify-between gap-6 border-t border-white/10 pt-6">
+                    <div className="flex items-center gap-3 text-sm text-white/75">
+                        <ShieldCheck aria-hidden="true" className="size-5 text-[#dccf9f]" />
+                        <span>Secure, role-based access for your property team.</span>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-medium tracking-[0.18em] text-white/35">
+                        © CYNERZA
+                    </span>
+                </div>
+            </section>
+
+            <section className="relative flex min-h-svh items-center justify-center px-5 py-10 sm:px-8 lg:px-10">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_100%_0%,#e6eee5_0%,transparent_60%)]" />
+                <div className="relative w-full max-w-[440px]">
+                    <div className="mb-8 flex items-center gap-3 lg:hidden">
+                        <span className="flex size-10 items-center justify-center rounded-xl bg-[#0f3a2e] text-white">
+                            <Building2 aria-hidden="true" className="size-5" />
+                        </span>
+                        <span>
+                            <span className="block text-sm font-semibold tracking-[0.14em] text-[#163a2e]">
+                                CYNERZA
+                            </span>
+                            <span className="mt-0.5 block text-[10px] font-medium tracking-[0.18em] text-[#7e8d83]">
+                                HOTEL OPERATIONS
+                            </span>
+                        </span>
+                    </div>
+
+                    <div className="rounded-[28px] border border-[#e2e8df] bg-white/85 p-6 shadow-[0_30px_80px_-40px_rgba(12,42,32,0.45)] backdrop-blur-xl sm:p-8">
+                        <div className="mb-7">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#738478]">
+                                {isSignupMode ? 'A better way to host' : 'Your property, in good hands'}
+                            </p>
+                            <h2 className="mt-2.5 text-[30px] font-semibold leading-tight tracking-tight text-[#122b22]">
+                                {isSignupMode ? 'Create your account' : 'Welcome back'}
+                            </h2>
+                            <p className="mt-2.5 text-sm leading-6 text-[#6a786f]">
+                                {isSignupMode
+                                    ? 'Set up secure access to your CYNERZA workspace in a few seconds.'
+                                    : 'Sign in to continue to your hotel workspace.'}
+                            </p>
+                        </div>
+
+                        {isSignupEnabled && (
+                            <div
+                                className="mb-6 grid grid-cols-2 rounded-xl border border-[#e2e8df] bg-[#eef2ec] p-1"
+                                role="group"
+                                aria-label="Choose account access"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => switchMode(false)}
+                                    aria-pressed={!isSignupMode}
+                                    disabled={isLoading}
+                                    className={`flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6a53] disabled:opacity-60 ${
+                                        !isSignupMode
+                                            ? 'bg-white text-[#163a2e] shadow-sm ring-1 ring-black/[0.04]'
+                                            : 'text-[#6f7f75] hover:text-[#163a2e]'
+                                    }`}
+                                >
+                                    Sign in
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => switchMode(true)}
+                                    aria-pressed={isSignupMode}
+                                    disabled={isLoading}
+                                    className={`flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6a53] disabled:opacity-60 ${
+                                        isSignupMode
+                                            ? 'bg-white text-[#163a2e] shadow-sm ring-1 ring-black/[0.04]'
+                                            : 'text-[#6f7f75] hover:text-[#163a2e]'
+                                    }`}
+                                >
+                                    Create account
+                                </button>
+                            </div>
+                        )}
+
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[13px] font-medium text-[#2a3d34]">
+                                                Work email
+                                            </FormLabel>
+                                            <FormControl>
+                                                <span className="relative block">
+                                                    <Mail
+                                                        aria-hidden="true"
+                                                        className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-[#8b998f]"
+                                                    />
+                                                    <Input
+                                                        type="email"
+                                                        autoComplete="email"
+                                                        placeholder="you@yourhotel.com"
+                                                        className="h-12 rounded-xl border-[#dbe2d8] bg-white/90 pl-11 text-sm text-[#1c332a] shadow-sm placeholder:text-[#a3aca6] transition focus-visible:border-[#3f7a62] focus-visible:ring-4 focus-visible:ring-[#3f7a62]/15"
+                                                        {...field}
+                                                    />
+                                                </span>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <div className="flex items-center justify-between gap-3">
+                                                <FormLabel className="text-[13px] font-medium text-[#2a3d34]">
+                                                    Password
+                                                </FormLabel>
+                                                {!isSignupMode && (
+                                                    <span className="inline-flex items-center gap-1.5 text-[11px] text-[#8b998f]">
+                                                        <ShieldCheck aria-hidden="true" className="size-3.5" />
+                                                        Protected sign in
+                                                    </span>
+                                                )}
                                             </div>
-                                            {isSignupEnabled && (
-                                                <div className="mb-7 grid grid-cols-2 rounded-md border border-[#dfe4dc] bg-[#edf0e9] p-1" role="group" aria-label="Choose account access">
+                                            <FormControl>
+                                                <span className="relative block">
+                                                    <LockKeyhole
+                                                        aria-hidden="true"
+                                                        className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-[#8b998f]"
+                                                    />
+                                                    <Input
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        autoComplete={
+                                                            isSignupMode
+                                                                ? 'new-password'
+                                                                : 'current-password'
+                                                        }
+                                                        placeholder={
+                                                            isSignupMode
+                                                                ? 'Create a strong password'
+                                                                : 'Enter your password'
+                                                        }
+                                                        className="h-12 rounded-xl border-[#dbe2d8] bg-white/90 pl-11 pr-12 text-sm text-[#1c332a] shadow-sm placeholder:text-[#a3aca6] transition focus-visible:border-[#3f7a62] focus-visible:ring-4 focus-visible:ring-[#3f7a62]/15"
+                                                        {...field}
+                                                    />
                                                     <button
                                                         type="button"
-                                                        onClick={() => setIsSignupMode(false)}
-                                                        aria-pressed={!isSignupMode}
-                                                        className={`min-h-10 rounded-[4px] px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#315d4d] ${!isSignupMode ? 'bg-white text-[#203b30] shadow-sm' : 'text-[#68766e] hover:text-[#203b30]'}`}
-                                                        disabled={isLoading}
-                                                    >Sign in</button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsSignupMode(true)}
-                                                        aria-pressed={isSignupMode}
-                                                        className={`min-h-10 rounded-[4px] px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#315d4d] ${isSignupMode ? 'bg-white text-[#203b30] shadow-sm' : 'text-[#68766e] hover:text-[#203b30]'}`}
-                                                        disabled={isLoading}
-                                                    >Create account</button>
+                                                        onClick={() =>
+                                                            setShowPassword((visible) => !visible)
+                                                        }
+                                                        aria-label={
+                                                            showPassword
+                                                                ? 'Hide password'
+                                                                : 'Show password'
+                                                        }
+                                                        className="absolute right-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#7c8b81] transition-colors hover:bg-[#eef2ec] hover:text-[#204b3a] focus-visible:outline-2 focus-visible:outline-[#3f7a62]"
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeOff aria-hidden="true" className="size-[18px]" />
+                                                        ) : (
+                                                            <Eye aria-hidden="true" className="size-[18px]" />
+                                                        )}
+                                                    </button>
+                                                </span>
+                                            </FormControl>
+                                            {isSignupMode && passwordValue && (
+                                                <div className="pt-1.5">
+                                                    <div className="flex gap-1.5">
+                                                        {[0, 1, 2, 3].map((index) => (
+                                                            <span
+                                                                key={index}
+                                                                className={`h-1 flex-1 rounded-full transition-colors ${
+                                                                    index < passwordStrength.score
+                                                                        ? passwordStrength.color
+                                                                        : 'bg-[#e4e9e2]'
+                                                                }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <p className="mt-1.5 text-[11px] text-[#8b998f]">
+                                                        Password strength:{' '}
+                                                        <span className="font-medium text-[#5c7267]">
+                                                            {passwordStrength.label}
+                                                        </span>
+                                                    </p>
                                                 </div>
                                             )}
-                                            <Form {...form}>
-                                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="email"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className="text-[13px] font-medium text-[#293a32]">Work email</FormLabel>
-                                                                <FormControl>
-                                                                    <span className="relative block">
-                                                                        <Mail aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-[#849188]" />
-                                                                        <Input
-                                                                            type="email"
-                                                                            autoComplete="email"
-                                                                            placeholder="you@yourhotel.com"
-                                                                            className="h-[50px] rounded-md border-[#d9e0d8] bg-white pl-11 text-sm text-[#20312a] placeholder:text-[#a1aaa4] focus-visible:border-[#527963] focus-visible:ring-[#527963]/20"
-                                                                            {...field}
-                                                                        />
-                                                                    </span>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="password"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <div className="flex items-center justify-between gap-3">
-                                                                    <FormLabel className="text-[13px] font-medium text-[#293a32]">Password</FormLabel>
-                                                                    {!isSignupMode && <span className="text-xs text-[#849188]">Protected sign in</span>}
-                                                                </div>
-                                                                <FormControl>
-                                                                    <span className="relative block">
-                                                                        <LockKeyhole aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-[#849188]" />
-                                                                        <Input
-                                                                            type={showPassword ? 'text' : 'password'}
-                                                                            autoComplete={isSignupMode ? 'new-password' : 'current-password'}
-                                                                            placeholder="Enter your password"
-                                                                            className="h-[50px] rounded-md border-[#d9e0d8] bg-white pl-11 pr-12 text-sm text-[#20312a] placeholder:text-[#a1aaa4] focus-visible:border-[#527963] focus-visible:ring-[#527963]/20"
-                                                                            {...field}
-                                                                        />
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => setShowPassword((visible) => !visible)}
-                                                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                                                            className="absolute right-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-[#78877d] transition-colors hover:bg-[#f0f3ee] hover:text-[#294b3d] focus-visible:outline-2 focus-visible:outline-[#527963]"
-                                                                        >
-                                                                            {showPassword ? <EyeOff aria-hidden="true" className="size-[18px]" /> : <Eye aria-hidden="true" className="size-[18px]" />}
-                                                                        </button>
-                                                                    </span>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Button
-                                                        type="submit"
-                                                        className="mt-2 h-[50px] w-full rounded-md bg-[#214b3b] text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#193d30]"
-                                                        disabled={isLoading}
-                                                    >
-                                                        {isLoading ? (isSignupMode ? 'Creating account...' : 'Signing in...') : (isSignupMode ? 'Create account' : 'Sign in to workspace')}
-                                                        {!isLoading && <ArrowRight aria-hidden="true" className="size-4" />}
-                                                    </Button>
-                                                </form>
-                                            </Form>
-                                            <div className="mt-8 flex items-center justify-center gap-2 text-xs text-[#7a877e]">
-                                                <ShieldCheck aria-hidden="true" className="size-4 text-[#66806e]" />
-                                                <span>Your account details are kept secure.</span>
-                                            </div>
-                                            <p className="mt-8 text-center text-[11px] text-[#9aa39c]">CYNERZA PROPERTY MANAGEMENT</p>
-                                        </div>
-                                    </section>
-                                </main>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="mt-2 h-12 w-full rounded-xl bg-linear-to-b from-[#2a644e] to-[#1b4938] text-sm font-semibold text-white shadow-lg shadow-[#1b4938]/20 transition hover:from-[#2f6d55] hover:to-[#1f523f] focus-visible:ring-4 focus-visible:ring-[#3f7a62]/30 active:translate-y-px"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                                            {isSignupMode
+                                                ? 'Creating your account...'
+                                                : 'Signing you in...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isSignupMode ? 'Create account' : 'Sign in to workspace'}
+                                            <ArrowRight aria-hidden="true" className="size-4" />
+                                        </>
+                                    )}
+                                </Button>
+                            </form>
+                        </Form>
+
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[#7c8b81]">
+                            <span className="inline-flex items-center gap-1.5">
+                                <Check aria-hidden="true" className="size-3.5 text-[#3f7a62]" />
+                                Encrypted session
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <Check aria-hidden="true" className="size-3.5 text-[#3f7a62]" />
+                                Role-based access
+                            </span>
+                        </div>
+                    </div>
+
+                    <p className="mt-6 text-center text-[11px] tracking-wide text-[#98a29b]">
+                        {isSignupMode
+                            ? 'Already have access? Switch to sign in above.'
+                            : 'Need access? Ask your property administrator.'}
+                    </p>
+                </div>
+            </section>
+        </main>
     );
 }
