@@ -1,11 +1,9 @@
-"""
-Alembic environment configuration for async SQLAlchemy.
-"""
+"""Alembic environment configuration for the application's SQLAlchemy models."""
 
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -22,8 +20,14 @@ config = context.config
 # Get settings
 settings = get_settings()
 
-# Override sqlalchemy.url with our async database URL
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Alembic does not need an async driver for SQLite. Using the synchronous
+# driver avoids aiosqlite worker-thread startup issues and keeps migrations
+# independent from the application's async runtime.
+database_url = settings.DATABASE_URL
+if database_url.startswith("sqlite+aiosqlite://"):
+    database_url = database_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:
@@ -79,8 +83,20 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    asyncio.run(run_async_migrations())
+    """Run migrations online, using sync SQLite or async other databases."""
+    if database_url.startswith("sqlite://"):
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section, {}),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+        with connectable.connect() as connection:
+            do_run_migrations(connection)
+
+        connectable.dispose()
+    else:
+        asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():
